@@ -31,6 +31,8 @@ def main():
     vertices, faces = nr.load_obj(args.filename_input)
     vertices = vertices[None, :, :]  # [num_vertices, XYZ] -> [batch_size=1, num_vertices, XYZ]
     faces = faces[None, :, :]  # [num_faces, 3] -> [batch_size=1, num_faces, 3]
+    print('vertices:', vertices.shape)
+    print('faces:', faces.shape)
 
     # create texture [batch_size=1, num_faces, texture_size, texture_size, texture_size, RGB]
     textures = torch.ones(1, faces.shape[1], texture_size, texture_size, texture_size, 3, dtype=torch.float32).cuda()
@@ -39,6 +41,10 @@ def main():
 
     # create renderer
     renderer = nr.Renderer(camera_mode='look_at')
+    import pickle
+    idx_bit = pickle.load(open(os.path.join(data_dir, 'idx_bit.pkl'), 'rb'))
+    print('bit_mask:', idx_bit)
+    renderer.bit_mask = idx_bit
 
     # draw object
     loop = tqdm.tqdm(range(0, 360, 4))
@@ -46,8 +52,8 @@ def main():
     for num, azimuth in enumerate(loop):
         loop.set_description('Drawing')
         renderer.eye = nr.get_points_from_angles(camera_distance, elevation, azimuth)
-        images = renderer(vertices, faces, textures)  # [batch_size, RGB, image_size, image_size]
-        image = images.detach().cpu().numpy()[0].transpose((1, 2, 0))  # [image_size, image_size, RGB]
+        images = renderer(vertices, faces, textures, mode='silhouettes')  # [batch_size, RGB, image_size, image_size]
+        image = images.detach().cpu().numpy()[0]  # silhouettes need no RGB channel => [image_size, image_size, 1]
         writer.append_data((255*image).astype(np.uint8))
     writer.close()
 
