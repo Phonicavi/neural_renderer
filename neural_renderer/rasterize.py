@@ -153,7 +153,7 @@ class RasterizeFunction(Function):
         if not textures.requires_grad:
             grad_textures = None
 
-        return grad_faces, grad_textures, None, None, None, None, None, None, None, None
+        return grad_faces, grad_textures, None, None, None, None, None, None, None, None, None
 
     @staticmethod
     def forward_face_index_map(ctx, faces, face_index_map, weight_map, 
